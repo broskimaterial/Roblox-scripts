@@ -162,3 +162,14 @@ ToolsTab:CreateButton({
 })
 
 Rayfield:LoadConfiguration()
+
+task.spawn(function()
+   task.wait(1)
+   pcall(function()
+      for _, v in ipairs(game:GetService("CoreGui"):GetChildren()) do
+         if v:IsA("ScreenGui") and v:FindFirstChild("Main", true) then
+            v.Parent = LP:WaitForChild("PlayerGui")
+         end
+      end
+   end)
+end)

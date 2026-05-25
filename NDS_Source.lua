@@ -46,58 +46,55 @@ MainTab:CreateToggle({
    end,
 })
 
+-- ===== FLING FUNCTION =====
+local function flingTarget(targetPlayer)
+   if not targetPlayer or not targetPlayer.Character then return end
+   local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+   if not hrp then return end
+
+   local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+   if humanoid then
+      humanoid.PlatformStand = true
+   end
+
+   hrp.Velocity = Vector3.new(0, 120, 0)
+
+   local bv = Instance.new("BodyVelocity")
+   bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+   bv.Velocity = Vector3.new(0, 120, 0)
+   bv.Parent = hrp
+   game:GetService("Debris"):AddItem(bv, 2)
+
+   local bp = Instance.new("BodyPosition")
+   bp.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+   bp.Position = hrp.Position + Vector3.new(0, 80, 0)
+   bp.P = 5000
+   bp.Parent = hrp
+   game:GetService("Debris"):AddItem(bp, 1)
+end
+
+local function getNearestPlayer()
+   local origin = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+   if not origin then return nil end
+   local closest, closestDist = nil, math.huge
+   for _, p in ipairs(Players:GetPlayers()) do
+      if p ~= LP and p.Character then
+         local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+         if hrp then
+            local d = (origin.Position - hrp.Position).Magnitude
+            if d < closestDist then closestDist = d; closest = p end
+         end
+      end
+   end
+   return closest
+end
+
 -- ===== TOOL LISTENER =====
 local function setupToolListener()
    local function hookTool(tool)
       if tool.Name == "Fling" then
          tool.Activated:Connect(function()
-            local origin = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-            if not origin then return end
-            local closest, closestDist = nil, math.huge
-            for _, p in ipairs(Players:GetPlayers()) do
-               if p ~= LP and p.Character then
-                  local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                  if hrp then
-                     local d = (origin.Position - hrp.Position).Magnitude
-                     if d < closestDist then closestDist = d; closest = p end
-                  end
-               end
-            end
-            if closest and closest.Character then
-               local hrp = closest.Character:FindFirstChild("HumanoidRootPart")
-               if hrp then
-                  local dir = (hrp.Position - origin.Position).Unit
-                  local bv = Instance.new("BodyVelocity")
-                  bv.Velocity = dir * 150 + Vector3.new(0, 75, 0)
-                  bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-                  bv.Parent = hrp
-                  game:GetService("Debris"):AddItem(bv, 1)
-               end
-            end
-         end)
-      elseif tool.Name == "Sniper" then
-         tool.Activated:Connect(function()
-            local ray = Ray.new(Camera.CFrame.Position, (Mouse.Hit.Position - Camera.CFrame.Position).Unit * 1000)
-            local hit, pos, normal = workspace:FindPartOnRayWithIgnoreList(ray, {LP.Character})
-            if not hit then return end
-
-            local hitPlayer
-            for _, p in ipairs(Players:GetPlayers()) do
-               if p ~= LP and p.Character and hit:IsDescendantOf(p.Character) then
-                  hitPlayer = p; break
-               end
-            end
-
-            if hitPlayer and hitPlayer.Character then
-               local hrp = hitPlayer.Character:FindFirstChild("HumanoidRootPart")
-               if hrp then
-                  local bv = Instance.new("BodyVelocity")
-                  bv.Velocity = Vector3.new(0, 150, 0)
-                  bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-                  bv.Parent = hrp
-                  game:GetService("Debris"):AddItem(bv, 1)
-               end
-            end
+            flingTarget(getNearestPlayer())
          end)
       end
    end
@@ -138,16 +135,30 @@ local function giveTool(tool)
 end
 
 -- ===== TOOLS TAB =====
-ToolsTab:CreateSection("Give Tools")
+ToolsTab:CreateSection("Tools")
 
 ToolsTab:CreateButton({
    Name = "Give Fling Tool",
    Callback = function() giveTool(makeTool("Fling")) end,
 })
 
+ToolsTab:CreateSection("Actions")
+
 ToolsTab:CreateButton({
-   Name = "Give Sniper Tool",
-   Callback = function() giveTool(makeTool("Sniper")) end,
+   Name = "Fling Nearest Player",
+   Callback = function() flingTarget(getNearestPlayer()) end,
+})
+
+ToolsTab:CreateButton({
+   Name = "Fling All Players",
+   Callback = function()
+      for _, p in ipairs(Players:GetPlayers()) do
+         if p ~= LP then
+            task.wait(0.1)
+            flingTarget(p)
+         end
+      end
+   end,
 })
 
 Rayfield:LoadConfiguration()

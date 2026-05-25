@@ -52,25 +52,31 @@ local function flingTarget(targetPlayer)
    local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
    if not hrp then return end
 
+   pcall(function()
+      sethiddenproperty(LP, "SimulationRadius", 1000)
+      sethiddenproperty(LP, "MaxSimulationRadius", 1000)
+   end)
+
    local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
    if humanoid then
       humanoid.PlatformStand = true
+      humanoid:ChangeState(Enum.HumanoidStateType.Physics)
    end
 
-   hrp.Velocity = Vector3.new(0, 120, 0)
+   hrp.Velocity = Vector3.new(0, 200, 0)
+   hrp.RotVelocity = Vector3.new(100, 100, 100)
+
+   local bt = Instance.new("BodyThrust")
+   bt.Force = Vector3.new(99999, 99999 * 10, 99999)
+   bt.Location = hrp.Position
+   bt.Parent = hrp
+   game:GetService("Debris"):AddItem(bt, 1)
 
    local bv = Instance.new("BodyVelocity")
    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-   bv.Velocity = Vector3.new(0, 120, 0)
+   bv.Velocity = Vector3.new(0, 150, 0)
    bv.Parent = hrp
    game:GetService("Debris"):AddItem(bv, 2)
-
-   local bp = Instance.new("BodyPosition")
-   bp.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-   bp.Position = hrp.Position + Vector3.new(0, 80, 0)
-   bp.P = 5000
-   bp.Parent = hrp
-   game:GetService("Debris"):AddItem(bp, 1)
 end
 
 local function getNearestPlayer()
@@ -154,7 +160,7 @@ ToolsTab:CreateButton({
    Callback = function()
       for _, p in ipairs(Players:GetPlayers()) do
          if p ~= LP then
-            task.wait(0.1)
+            task.wait(0.05)
             flingTarget(p)
          end
       end
